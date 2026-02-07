@@ -1,12 +1,15 @@
+import os
 import google.generativeai as genai
 from fastapi import FastAPI
 from mangum import Mangum
-import requests  # सटीक गणना के लिए बाहरी इंजन का उपयोग
-import os
+from flatlib.datetime import Datetime
+from flatlib.geopos import GeoPos
+from flatlib.chart import Chart
+from flatlib import const
 
 app = FastAPI()
 
-# आपकी Gemini API Key
+# आपकी की (Key)
 genai.configure(api_key="AIzaSyDWDbbKhME7QZlXh3iWFUnM7WlX8VKlOwM")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
