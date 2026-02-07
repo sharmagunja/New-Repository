@@ -1,4 +1,5 @@
 fastapi
 google-generativeai
 mangum
-requests
+pyswisseph==2.00.00-2
+flatlib
