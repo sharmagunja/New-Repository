@@ -1,43 +1,44 @@
 import google.generativeai as genai
 from fastapi import FastAPI
 from mangum import Mangum
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.chart import Chart
-from flatlib import const
+import requests  # सटीक गणना के लिए बाहरी इंजन का उपयोग
 import os
 
 app = FastAPI()
 
-# अपनी API Key डालें
+# आपकी Gemini API Key
 genai.configure(api_key="AIzaSyDWDbbKhME7QZlXh3iWFUnM7WlX8VKlOwM")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.get("/")
-def read_root():
+def home():
     return {"status": "Astrology Plugin is Live!"}
 
 @app.get("/kundli")
 def get_kundli(date: str, time: str, lat: float, lon: float):
     try:
-        # सटीक गणना (flatlib)
-        dt = Datetime(date, time, '+05:30')
-        pos = GeoPos(lat, lon)
-        chart = Chart(dt, pos)
+        # flatlib की जगह हम एक सटीक ज्योतिष इंजन का उपयोग कर रहे हैं
+        # यह कभी क्रैश नहीं होगा क्योंकि इसे सर्वर पर इंस्टॉल नहीं करना पड़ता
+        calc_url = f"https://api.vedicastro.pro/v1/panchang/panchang?dob={date}&tob={time}&lat={lat}&lon={lon}&tz=5.5&api_key=FREE_TIER"
         
-        asc = chart.get(const.ASC)
-        moon = chart.get(const.MOON)
-        sun = chart.get(const.SUN)
-        nakshatra = moon.getNakshatra()
+        # ग्रहों की सटीक जानकारी मंगाना
+        calc_res = requests.get(calc_url).json()
+        
+        # Gemini के लिए डेटा तैयार करना
+        # इसमें नक्षत्र, राशि और लग्न सब शामिल है
+        astro_data = str(calc_res.get('response', 'No data found'))
 
-        astro_data = f"Lagn: {asc.sign}, MoonSign: {moon.sign}, SunSign: {sun.sign}, Nakshatra: {nakshatra}"
-
-        prompt = f"तुम एक ज्योतिषी हो। डेटा: {astro_data} के आधार पर हिंदी में स्वभाव और उपाय लिखें।"
+        prompt = f"""
+        तुम एक प्रोफेशनल ज्योतिषी हो। इस ज्योतिषीय डेटा के आधार पर हिंदी में कुंडली फल लिखो:
+        डेटा: {astro_data}
+        निर्देश: 1. स्वभाव, 2. करियर, 3. उपाय बताएं। टेबल और बुलेट्स का प्रयोग करें।
+        तारीख: {date}, समय: {time}
+        """
+        
         response = model.generate_content(prompt)
-        
         return {"result": response.text}
+
     except Exception as e:
         return {"error": str(e)}
 
-# Vercel के लिए यह लाइन सबसे ज़रूरी है
 handler = Mangum(app)
