@@ -11,7 +11,7 @@ app = FastAPI()
 
 # API Key को सुरक्षित रूप से पढ़ना
 # अगर आप सीधे डाल रहे हैं तो नई Key यहाँ लिखें
-api_key = os.getenv("GEMINI_API_KEY", "आपकी_नई_API_KEY") 
+api_key = os.getenv("AIzaSyDWDbbKhME7QZlXh3iWFUnM7WlX8VKlOwM", "AIzaSyDWDbbKhME7QZlXh3iWFUnM7WlX8VKlOwM") 
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
