@@ -9,41 +9,35 @@ import os
 
 app = FastAPI()
 
-# API Key
+# अपनी API Key डालें
 genai.configure(api_key="AIzaSyDWDbbKhME7QZlXh3iWFUnM7WlX8VKlOwM")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.get("/")
-def home():
+def read_root():
     return {"status": "Astrology Plugin is Live!"}
 
 @app.get("/kundli")
 def get_kundli(date: str, time: str, lat: float, lon: float):
     try:
-        # flatlib गणना (100% सटीक)
-        # date format: 2024/05/20, time: 10:30
+        # सटीक गणना (flatlib)
         dt = Datetime(date, time, '+05:30')
         pos = GeoPos(lat, lon)
         chart = Chart(dt, pos)
         
-        # ग्रहों की स्थिति निकालना
         asc = chart.get(const.ASC)
         moon = chart.get(const.MOON)
         sun = chart.get(const.SUN)
         nakshatra = moon.getNakshatra()
 
-        # यह डेटा 100% सही है, अब इसे Gemini को देंगे
-        astro_data = (f"Lagn: {asc.sign} ({asc.lon}), "
-                      f"MoonSign: {moon.sign} ({moon.lon}), "
-                      f"SunSign: {sun.sign}, "
-                      f"Nakshatra: {nakshatra}")
+        astro_data = f"Lagn: {asc.sign}, MoonSign: {moon.sign}, SunSign: {sun.sign}, Nakshatra: {nakshatra}"
 
-        prompt = f"तुम एक ज्योतिष विशेषज्ञ हो। इस सटीक डेटा {astro_data} के आधार पर जातक का स्वभाव और भविष्यफल हिंदी में लिखें। गणना मैं कर चुका हूँ, तुम बस फल बताओ।"
-        
+        prompt = f"तुम एक ज्योतिषी हो। डेटा: {astro_data} के आधार पर हिंदी में स्वभाव और उपाय लिखें।"
         response = model.generate_content(prompt)
-        return {"result": response.text, "raw_data": astro_data}
-
+        
+        return {"result": response.text}
     except Exception as e:
-        return {"error": f"Calculation Error: {str(e)}. Please check date format YYYY/MM/DD"}
+        return {"error": str(e)}
 
+# Vercel के लिए यह लाइन सबसे ज़रूरी है
 handler = Mangum(app)
